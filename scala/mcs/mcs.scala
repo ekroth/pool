@@ -32,7 +32,7 @@ case class mcs2[+A](xs: List[A], ys: List[A]) {
         case (_, 0) => 0
         case (0, _) => 0
         case (i, j) => {
-          if (i == j) 1 + mcsMap((i-1) -> (j-1))()
+          if (xs(i-1) == ys(j-1)) 1 + mcsMap((i-1) -> (j-1))()
           else max(mcsMap((i-1) -> j)(), mcsMap(i -> (j-1))())
         }
       }
