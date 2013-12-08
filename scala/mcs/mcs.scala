@@ -1,0 +1,43 @@
+// http://cs.lth.se/english/course/edan40_functional_programming/programming_assignments/mcsp/
+
+object mcsSlow {
+  def mcsLength[A](xs: List[A], ys: List[A]): Int = {
+    import scala.math.max
+      (xs, ys) match {
+      case (_, Nil) => 0
+      case (Nil, _) => 0
+      case (xz@(x :: xs), yz@(y :: ys)) => {
+        if (x == y) 1 + mcsLength(xs, ys)
+        else max(mcsLength(xs, yz), mcsLength(xz, ys))
+      }
+    }
+  }
+}
+
+
+case class mcs2[+A](xs: List[A], ys: List[A]) {
+  import scala.math.max
+  case class Entry(i: Int, j: Int) {
+    def apply() = value
+    lazy val value: Int = {
+      (i, j) match {
+        case (_, 0) => 0
+        case (0, _) => 0
+        case (i, j) => {
+          if (i == j) 1 + mcsMap((i - 1, j - 1))()
+          else max(mcsMap((i - 1, j))(), mcsMap((i, j - 1))())
+        }
+      }
+    }
+  }
+
+  lazy val mcsMap =
+    (for {
+      i <- 0 to xs.length
+      j <- 0 to ys.length
+    } yield {
+      ((i,j),Entry(i,j))
+    }).toMap
+
+  lazy val result = mcsMap((xs.length, ys.length))()
+}
