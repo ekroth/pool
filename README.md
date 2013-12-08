@@ -1,0 +1,4 @@
+pool
+====
+
+thoughts and experiments
