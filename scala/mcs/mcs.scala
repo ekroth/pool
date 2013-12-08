@@ -25,6 +25,7 @@ object mcsSlow {
   */
 case class mcs2[+A](xs: List[A], ys: List[A]) {
   import scala.math.max
+
   case class Entry(i: Int, j: Int) {
     def apply() = value
     lazy val value: Int = {
@@ -39,12 +40,12 @@ case class mcs2[+A](xs: List[A], ys: List[A]) {
     }
   }
 
-  lazy val mcsMap =
+  val mcsMap =
     (for {
       i <- 0 to xs.length
       j <- 0 to ys.length
     } yield {
-      ((i,j),Entry(i,j))
+      (i,j) -> Entry(i,j)
     }).toMap
 
   lazy val result = mcsMap(xs.length -> ys.length)()
