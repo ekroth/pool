@@ -15,6 +15,14 @@ object mcsSlow {
 }
 
 
+/** Not fast (tuples and so on), but using lazy and fully immutable.
+  * Would have been faster using an Array or similar.
+  * 
+  * {{{
+  * scala> mcs2(10 until 900 toList, (60 to 100 toList) ++ (500 to 1000 toList)).result
+  * res5: Int = 542
+  * }}}
+  */
 case class mcs2[+A](xs: List[A], ys: List[A]) {
   import scala.math.max
   case class Entry(i: Int, j: Int) {
@@ -24,8 +32,8 @@ case class mcs2[+A](xs: List[A], ys: List[A]) {
         case (_, 0) => 0
         case (0, _) => 0
         case (i, j) => {
-          if (i == j) 1 + mcsMap((i - 1, j - 1))()
-          else max(mcsMap((i - 1, j))(), mcsMap((i, j - 1))())
+          if (i == j) 1 + mcsMap((i-1) -> (j-1))()
+          else max(mcsMap((i-1) -> j)(), mcsMap(i -> (j-1))())
         }
       }
     }
@@ -39,5 +47,5 @@ case class mcs2[+A](xs: List[A], ys: List[A]) {
       ((i,j),Entry(i,j))
     }).toMap
 
-  lazy val result = mcsMap((xs.length, ys.length))()
+  lazy val result = mcsMap(xs.length -> ys.length)()
 }
