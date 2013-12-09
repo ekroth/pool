@@ -19,9 +19,6 @@ object mcsSlow {
   * Would have been faster using an Array or similar.
   * 
   * {{{
-  * scala> mcs2(10 until 900 toList, (60 to 100 toList) ++ (500 to 1000 toList)).result
-  * res5: Int = 542
-  * 
   * scala> mcs2("328239439".toList, "132379".toList).result
   * res4: Int = 4
   * }}}
