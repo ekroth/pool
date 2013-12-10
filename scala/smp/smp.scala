@@ -11,7 +11,7 @@ object smp {
   }
 
   case class Woman(name: Name, ms: Map[Name, Int], husband: Option[Man] = None) {
-    def propose(m: Man): (Option[Man], Woman) = {
+    def propBy(m: Man): (Option[Man], Woman) = {
       val mlevel = ms(m.name)
       val hlevel = husband map { x => ms(x.name) } getOrElse { mlevel + 1 }
 
@@ -28,7 +28,7 @@ object smp {
     else {
       val (man, nms) = ms.dequeue
       val (wname, tmpman) = man.next
-      val (nman, nwom) = wm(wname).propose(tmpman)
+      val (nman, nwom) = wm(wname) propBy tmpman
       smp(nms ++ nman, wm.updated(nwom.name, nwom))
     }
   }
