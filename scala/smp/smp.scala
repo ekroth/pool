@@ -11,24 +11,24 @@ object smp {
   }
 
   case class Woman(name: Name, ms: Map[Name, Int], husband: Option[Man] = None) {
-    def propose(m: Man): (Woman, Option[Man]) = {
+    def propose(m: Man): (Option[Man], Woman) = {
       val mlevel = ms(m.name)
       val hlevel = husband map { x => ms(x.name) } getOrElse { mlevel + 1 }
 
       if (mlevel < hlevel) {
         val h = m.copy(wife = Some(name))
         val w = copy(husband = Some(h))
-        (w, husband map { _.copy(wife = None) })
-      } else (this, Some(m))
+        (husband map { _.copy(wife = None) }, w)
+      } else (Some(m), this)
     }
   }
 
   def smp(ms: Queue[Man], wm: Map[Name, Woman]): List[Woman] = {
     if (ms isEmpty) wm.values.toList
     else {
-      val (man,nms) = ms.dequeue
-      val (wname,tmpman) = man.next
-      val (nwom,nman) = wm(wname).propose(tmpman)
+      val (man, nms) = ms.dequeue
+      val (wname, tmpman) = man.next
+      val (nman, nwom) = wm(wname).propose(tmpman)
       smp(nms ++ nman.toList, wm.updated(nwom.name, nwom))
     }
   }
