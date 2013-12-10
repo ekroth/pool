@@ -29,7 +29,7 @@ object smp {
       val (man, nms) = ms.dequeue
       val (wname, tmpman) = man.next
       val (nman, nwom) = wm(wname).propose(tmpman)
-      smp(nms ++ nman.toList, wm.updated(nwom.name, nwom))
+      smp(nms ++ nman, wm.updated(nwom.name, nwom))
     }
   }
 
