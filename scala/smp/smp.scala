@@ -24,7 +24,7 @@ object smp {
   }
 
   def smp(ms: Queue[Man], wm: Map[Name, Woman]): List[Woman] = {
-    if (ms isEmpty) wm.values.toList
+    if (ms.isEmpty) wm.values.toList
     else {
       val (man, nms) = ms.dequeue
       val (wname, tmpman) = man.next
