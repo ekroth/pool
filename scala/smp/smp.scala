@@ -1,5 +1,6 @@
 object smp {
   import scala.collection.immutable.Queue
+  import scala.io.Source
 
   type Name = String
   type Id = Int
@@ -58,19 +59,28 @@ object smp {
       "Rachel" -> Woman("Rachel", Map("Ross" -> 0, "Joey" -> 1, "Chandler" -> 2)))*/
   }
 
-  def read() {
-    import scala.io.Source
+  def read(src: Source) {
 
     // Use Stream.continually! (Immutable!)
+
+
+    // Could this work?
+    val stream = {
+      val it = src.getLines
+      Stream.continually(if (it.hasNext) Some(it.next) else None)
+    }
+
+    println(stream.toList.toString)
+      
 
     def clean(it: Iterator[String]) = 
       it dropWhile { x => x(0) == '#' || x(0) == '\n' }
 
-    def names(it: Iterator[String]):  = {
+    def names(it: Iterator[String])  = {
 
     }
 
-    def people(it: Iterator[String])
+//    def people(it: Iterator[String])
 
 
   }
