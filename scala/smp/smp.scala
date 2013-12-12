@@ -10,10 +10,10 @@ object smp {
       (w, copy(ws = nws))
     }
 
-    def out()(implicit names: Map[Id, Name]) = s"${names(id)} -- ${names(wife.get)}"
+    def out()(implicit names: Seq[Name]) = s"${names(id)} -- ${names(wife.get)}"
   }
 
-  case class Woman(id: Id, ms: Vector[Int], husband: Option[Man] = None) {
+  case class Woman(id: Id, ms: Seq[Int], husband: Option[Man] = None) {
     def propFrom(m: Man): (Option[Man], Woman) = {
       val mlevel = ms.indexOf(m.id)
       val hlevel = husband map { x => ms.indexOf(x.id) } getOrElse { mlevel + 1 }
@@ -26,13 +26,13 @@ object smp {
     }
   }
 
-  def smp(ms: Queue[Man], wm: Map[Id, Woman]): List[Woman] = {
-    if (ms.isEmpty) wm.values.toList
+  def smp(names: Seq[Name], ms: Queue[Man], wm: Seq[Woman]): Seq[Woman] = {
+    if (ms.isEmpty) wm
     else {
       val (man, nms) = ms.dequeue
       val (wid, tmpman) = man.next
       val (nman, nwom) = wm(wid) propFrom tmpman
-      smp(nms ++ nman, wm.updated(nwom.id, nwom))
+      smp(names, nms ++ nman, wm.updated(nwom.id, nwom))
     }
   }
 
@@ -59,11 +59,19 @@ object smp {
   }
 
   def read() {
-    /*import scala.io.Source
+    import scala.io.Source
 
-    val (names, ms, ws) = Source.stdin().foldLeft(
-      (Map[Id, Name].empty, Queue[Man].empty, Map[Id, Woman].empty)) {
-      
-    }*/
+    // Use Stream.continually! (Immutable!)
+
+    def clean(it: Iterator[String]) = 
+      it dropWhile { x => x(0) == '#' || x(0) == '\n' }
+
+    def names(it: Iterator[String]):  = {
+
+    }
+
+    def people(it: Iterator[String])
+
+
   }
 }
