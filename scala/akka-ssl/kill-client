@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ kill $(ps -h | grep java | grep KILL_CLIENT_FORK | awk '{print $1}')
