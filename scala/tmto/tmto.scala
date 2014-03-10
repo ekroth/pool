@@ -2,23 +2,21 @@ import java.security._
 
 package object tmto {
   lazy val MD = MessageDigest.getInstance("MD5")
-  val ascii = (65.toChar, 122.toChar)
-  val Height = 128
-  val Width = 128
+  val ascii = (97.toChar, 122.toChar)
+  val Height = 406
+  val Width = 512
 
   case class Hash(hash: String) {
     /** Reduced hash */
     def reduced = {
-      val groups = (hash grouped (hash.length / 2)).toList match {
-        case x if (x.length == 2) => x
-        case x :: y :: z :: Nil => x :: (y + z) :: Nil
+      val (start, end) = ascii
+      val range = BigInt(end - start)
+      val groups = hash split '-' filter { _ != "" }
+      val chars = groups map { 
+        x => (BigInt(start) + BigInt(x) % range).toChar 
       }
 
-      val chars = groups map {
-        x => (ascii._1 + (x.mkString.hashCode % (ascii._2 - ascii._1))).toChar
-      }
-
-      Pass(chars.mkString)
+      Pass(chars.take(3).mkString)
     }
   }
 
@@ -27,6 +25,8 @@ package object tmto {
     def hashed = Hash(MD.digest(pass.getBytes("UTF-8")).mkString)
   }
 
+  def chain(pass: Pass) = Stream.iterate(pass.hashed) { _.reduced.hashed }
+
   /** TMTO-table */
   lazy val table = {
     val passwords = {
@@ -34,7 +34,8 @@ package object tmto {
       for {
         x <- chars
         y <- chars
-      } yield s"$x$y"
+        z <- chars
+      } yield s"$x$y$z"
     }
 
     assert {
@@ -44,12 +45,11 @@ package object tmto {
 
     assert { passwords.length >= Height }
 
-    val indices = (0 until Height) map { _ * (passwords.length / Height) }
+    val indices = (0 until Height)
     val vs = indices map {
       x => {
         val pass = Pass(passwords(x))
-        val chain = Stream.iterate(pass.hashed) { _.reduced.hashed }
-        chain(Width - 1) -> pass
+        chain(pass)(Width - 1) -> pass
       }
     }
 
@@ -57,6 +57,7 @@ package object tmto {
 
     println(vs.length)
     val map = vs.toMap
+    println(map.mkString("\n"))
     println(map.size)
     map
   }
