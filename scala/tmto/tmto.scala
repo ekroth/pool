@@ -1,7 +1,12 @@
 import java.security._
 
+/* Results 2014-03-10
+ scala> (tmto.passwords.take(512) flatMap { x => tmto.crack(tmto.Pass(x).hashed) }).length
+ res13: Int = 16
+ */
+
 package object tmto {
-  lazy val MD = MessageDigest.getInstance("MD5")
+  lazy val MD = MessageDigest.getInstance("SHA-256")
   val ascii = (97.toChar, 122.toChar)
   val Height = 406
   val Width = 512
@@ -27,16 +32,17 @@ package object tmto {
 
   def chain(pass: Pass) = Stream.iterate(pass.hashed) { _.reduced.hashed }
 
+  lazy val passwords = {
+    val chars = ascii._1 until ascii._2
+    for {
+      x <- chars
+      y <- chars
+      z <- chars
+    } yield s"$x$y$z"
+  }
+
   /** TMTO-table */
   lazy val table = {
-    val passwords = {
-      val chars = ascii._1 until ascii._2
-      for {
-        x <- chars
-        y <- chars
-        z <- chars
-      } yield s"$x$y$z"
-    }
 
     assert {
       val hs = passwords map { x => Pass(x) }
