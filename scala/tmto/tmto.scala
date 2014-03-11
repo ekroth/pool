@@ -1,39 +1,68 @@
+/*
+ The MIT License (MIT)
+
+ Copyright (c) 2014 Andrée Ekroth
+ */
+
 import java.security._
 
 /* Results 2014-03-10
- scala> (tmto.passwords.take(512) flatMap { x => tmto.crack(tmto.Pass(x).hashed) }).length
- res13: Int = 16
+ * Size: 4096 x 4096
+ * 
+ * scala> (tmto.passwords.take(8192).par flatMap { x => tmto.crack(tmto.Pass(x).hashed(md())) }).length
+ * res13: Int = 289
  */
-
 package object tmto {
-  lazy val MD = MessageDigest.getInstance("SHA-256")
-  val ascii = (97.toChar, 122.toChar)
-  val Height = 406
-  val Width = 512
 
+  /** Valid characters. */
+  val ASCII = (97.toChar, 122.toChar)
+  val Length = 3
+
+  /** Size of table. */
+  val Height = 4096
+  val Width = 4096
+
+  /** Hash. */
   case class Hash(hash: String) {
-    /** Reduced hash */
+
+    /** 
+      * Reduce hash to a password.
+      * Password length limited by SHA-256 pattern.
+      * 
+      * SHA-256 pattern: NNNN-NNNNNNN-NNNN-NNN
+      * - Map groups into BigInt.
+      * - Map BigInt to character by: ASCII-start + BigInt % ASCII-range.
+      * - Take X groups and turn into String.
+      */
     def reduced = {
-      val (start, end) = ascii
+      val (start, end) = ASCII
       val range = BigInt(end - start)
       val groups = hash split '-' filter { _ != "" }
       val chars = groups map { 
         x => (BigInt(start) + BigInt(x) % range).toChar 
       }
 
-      Pass(chars.take(3).mkString)
+      Pass(chars.take(Length).mkString)
     }
   }
 
+  /** Password. */
   case class Pass(pass: String) {
-    /** Hashed password */
-    def hashed = Hash(MD.digest(pass.getBytes("UTF-8")).mkString)
+
+    /** Hashed password. */
+    def hashed(md: MessageDigest) = Hash(md.digest(pass.getBytes("UTF-8")).mkString)
   }
 
-  def chain(pass: Pass) = Stream.iterate(pass.hashed) { _.reduced.hashed }
+  /** Default digester. */
+  def md() = MessageDigest.getInstance("SHA-256")
 
+  /** Infinite hash chain. */
+  def chain(pass: Pass, md: MessageDigest) = 
+    Stream.iterate(pass.hashed(md)) { _.reduced.hashed(md) }
+
+  /** All password combinations. */ 
   lazy val passwords = {
-    val chars = ascii._1 until ascii._2
+    val chars = ASCII._1 until ASCII._2
     for {
       x <- chars
       y <- chars
@@ -41,46 +70,40 @@ package object tmto {
     } yield s"$x$y$z"
   }
 
-  /** TMTO-table */
+  /**
+    * TMTO-table.
+    * 
+    * - Chosen start values are random.
+    * - Chains are calculated in parallel.
+    */
   lazy val table = {
+    import scala.util.Random
 
-    assert {
-      val hs = passwords map { x => Pass(x) }
-      hs.length == hs.distinct.length
-    }
-
-    assert { passwords.length >= Height }
-
-    val indices = (0 until Height)
-    val vs = indices map {
+    val vs = Random.shuffle(passwords.take(Width)).par map {
       x => {
-        val pass = Pass(passwords(x))
-        chain(pass)(Width - 1) -> pass
+        val pass = Pass(x)
+        chain(pass, md())(Width - 1) -> pass
       }
     }
 
-    println(vs.mkString("\n"))
-
-    println(vs.length)
-    val map = vs.toMap
-    println(map.mkString("\n"))
-    println(map.size)
-    map
+    vs.toMap
   }
 
-  /** Try to crack hash */
+  /** Match Hash with Pass. */
   def crack(hash: Hash) = {
-    /** Search table row for Hash */
-    def crackrow(pass: Pass, end: Hash): Option[Pass] = pass.hashed match {
+    val digest = md()
+
+    /** Search table row for Hash. */
+    def crackrow(pass: Pass, end: Hash): Option[Pass] = pass.hashed(digest) match {
       case `hash` => Some(pass)
       case `end` => None
       case h => crackrow(h.reduced, end)
     }
 
-    /** Crack */
+    /** Search hash chain for table entry. */
     def crack(curr: Hash): Option[Pass] = table.get(curr) match {
       case Some(pass) => crackrow(pass, curr)
-      case _ => crack(curr.reduced.hashed)
+      case _ => crack(curr.reduced.hashed(digest))
     }
 
     crack(hash)
