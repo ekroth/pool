@@ -19,8 +19,8 @@ package object tmto {
   val Length = 3
 
   /** Size of table. */
-  val Height = 4096
-  val Width = 4096
+  val Height = 1024
+  val Width = 1024
 
   /** Hash. */
   case class Hash(hash: String) {
