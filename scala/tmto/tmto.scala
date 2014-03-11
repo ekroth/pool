@@ -22,7 +22,6 @@ package object tmto {
   val Height = 1024
   val Width = 1024
 
-  /** Hash. */
   case class Hash(hash: String) {
 
     /** 
@@ -46,10 +45,8 @@ package object tmto {
     }
   }
 
-  /** Password. */
   case class Pass(pass: String) {
 
-    /** Hashed password. */
     def hashed(md: MessageDigest) = Hash(md.digest(pass.getBytes("UTF-8")).mkString)
   }
 
@@ -57,8 +54,7 @@ package object tmto {
   def md() = MessageDigest.getInstance("SHA-256")
 
   /** Infinite hash chain. */
-  def chain(pass: Pass, md: MessageDigest) = 
-    Stream.iterate(pass.hashed(md)) { _.reduced.hashed(md) }
+  def chain(pass: Pass, md: MessageDigest) = Stream.iterate(pass.hashed(md)) { _.reduced.hashed(md) }
 
   /** All password combinations. */ 
   lazy val passwords = {
