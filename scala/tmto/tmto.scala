@@ -20,7 +20,7 @@ package object tmto {
       * - Take 'length' groups and turn into String.
       */
     def reduced(length: Int, chars: Seq[Char]) = {
-      val groups = hash split '-' filter { _ != "" }
+      val groups = hash split '-' filter { _.nonEmpty }
       val cs = groups map { 
         x => chars((BigInt(x) % chars.length).toInt)
       }
@@ -53,7 +53,7 @@ package object tmto {
       * - Chosen start values are random.
       * - Chains are calculated in parallel.
       */
-    val table = (Random.shuffle(passwords).take(height).par map {
+    val table: GenMap[Hash, Pass] = (Random.shuffle(passwords).take(height).par map {
       x => {
         val pass = Pass(x)
         val digest = md()
