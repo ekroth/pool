@@ -82,6 +82,7 @@ package object tmto {
     val digest = md()
 
     /** Search table row for Hash. */
+    @annotation.tailrec 
     def crackrow(pass: Pass, end: Hash): Option[Pass] = pass.hashed(digest) match {
       case `hash` => Some(pass)
       case `end` => None
@@ -89,6 +90,7 @@ package object tmto {
     }
 
     /** Search hash chain for table entry. */
+    @annotation.tailrec 
     def crack(curr: Hash): Option[Pass] = table.get(curr) match {
       case Some(pass) => crackrow(pass, curr)
       case _ => crack(curr.reduced.hashed(digest))
