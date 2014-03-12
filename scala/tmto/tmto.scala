@@ -15,8 +15,8 @@ package object tmto {
       * Password length limited by digester pattern.
       * 
       * Digester pattern: NNNN-NNNNNNN-NNNN-NNN
-      * - Map groups into BigInt.
-      * - Map BigInt to character index.
+      * - Map groups into integer.
+      * - Map integer to character index.
       * - Take 'length' groups and turn into String.
       */
     def reduced(length: Int, chars: Seq[Char]) = {
@@ -81,8 +81,8 @@ package object tmto {
 
       /** Search hash chain for table entry.
         * 
-        * 1. Look for hash in table, otherwise none.
-        *    If found, search row, otherswise none.
+        * 1. Look for hash in table, otherwise see 2.
+        *    If found, search row, otherwise see 2.
         * 2. If iterations are less than chain length, continue.
         *    Otherwise, none.
         */
