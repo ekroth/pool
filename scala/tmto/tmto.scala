@@ -20,6 +20,7 @@ package object tmto {
   /** Valid characters. */
   val ASCII = ('a', 'z')
   val Length = 3
+  val Algorithms = Seq("MD2", "MD5", "SHA-1", "SHA-1", "SHA-256", "SHA-384", "SHA-512")
 
   case class Hash(hash: String) {
     /** 
