@@ -4,8 +4,6 @@
  Copyright (c) 2014 Andrée Ekroth
  */
 
-import java.security._
-
 /* Results 2014-03-10
  * Size: 4096 x 4096
  * 
@@ -13,17 +11,17 @@ import java.security._
  * res13: Int = 289
  */
 package object tmto {
+  import scala.util.Random
+  import scala.collection._
+  import java.security.MessageDigest
+
+  type Table = GenMap[Hash, Pass]
 
   /** Valid characters. */
   val ASCII = (97.toChar, 122.toChar)
   val Length = 3
 
-  /** Size of table. */
-  val Height = 1024
-  val Width = 1024
-
   case class Hash(hash: String) {
-
     /** 
       * Reduce hash to a password.
       * Password length limited by SHA-256 pattern.
@@ -46,7 +44,6 @@ package object tmto {
   }
 
   case class Pass(pass: String) {
-
     def hashed(md: MessageDigest) = Hash(md.digest(pass.getBytes("UTF-8")).mkString)
   }
 
@@ -72,21 +69,15 @@ package object tmto {
     * - Chosen start values are random.
     * - Chains are calculated in parallel.
     */
-  lazy val table = {
-    import scala.util.Random
-
-    val vs = Random.shuffle(passwords.take(Width)).par map {
-      x => {
-        val pass = Pass(x)
-        chain(pass, md())(Width - 1) -> pass
-      }
+  def table(width: Int, height: Int): Table = (Random.shuffle(passwords.take(height)).par map {
+    x => {
+      val pass = Pass(x)
+      chain(pass, md())(width - 1) -> pass
     }
-
-    vs.toMap
-  }
+  }).toMap
 
   /** Match Hash with Pass. */
-  def crack(hash: Hash) = {
+  def crack(table: Table, hash: Hash) = {
     val digest = md()
 
     /** Search table row for Hash. */
@@ -104,4 +95,12 @@ package object tmto {
 
     crack(hash)
   }
+
+  /** Crack hashed passwords. */
+  def test(hs: Seq[String], table: Table): GenSeq[Pass] = hs.par flatMap { x =>
+    tmto.crack(table, tmto.Pass(x).hashed(md()))
+  }
+
+  /** Crack n random passwords. */
+  def test(n: Int, table: Table): GenSeq[Pass] = test(Random.shuffle(passwords.take(n)), table)
 }
