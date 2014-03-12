@@ -16,6 +16,7 @@ package object tmto {
   import java.security.MessageDigest
 
   type Table = GenMap[Hash, Pass]
+  type Reducer = Hash => Pass
 
   /** Valid characters. */
   val ASCII = ('a', 'z')
@@ -78,7 +79,7 @@ package object tmto {
   }).toMap
 
   /** Match Hash with Pass. */
-  def crack(table: Table, hash: Hash) = {
+  def crack(table: Table, hash: Hash, width: Int) = {
     val digest = md()
 
     /** Search table row for Hash. */
@@ -90,20 +91,22 @@ package object tmto {
     }
 
     /** Search hash chain for table entry. */
-    @annotation.tailrec 
-    def crack(curr: Hash): Option[Pass] = table.get(curr) match {
-      case Some(pass) => crackrow(pass, curr)
-      case _ => crack(curr.reduced.hashed(digest))
+    @annotation.tailrec
+    def crack(curr: Hash, depth: Int): Option[Pass] = {
+      val entry = table.get(curr) flatMap { crackrow(_, curr) }
+      if (entry.isDefined) entry
+      else if (depth < width) crack(curr.reduced.hashed(digest), depth + 1)
+      else None
     }
 
-    crack(hash)
+    crack(hash, 0)
   }
 
   /** Crack hashed passwords. */
-  def test(hs: Seq[String], table: Table): GenSeq[Pass] = hs.par flatMap { x =>
-    tmto.crack(table, tmto.Pass(x).hashed(md()))
+  def test(hs: Seq[String], table: Table, width: Int): GenSeq[Pass] = hs.par flatMap { x =>
+    tmto.crack(table, tmto.Pass(x).hashed(md()), width)
   }
 
   /** Crack n random passwords. */
-  def test(n: Int, table: Table): GenSeq[Pass] = test(Random.shuffle(passwords).take(n), table)
+  def test(n: Int, table: Table, width: Int): GenSeq[Pass] = test(Random.shuffle(passwords).take(n), table, width)
 }
