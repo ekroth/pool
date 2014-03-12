@@ -12,7 +12,7 @@
  */
 package object tmto {
   import scala.util.Random
-  import scala.collection._
+  import scala.collection.{ GenSeq, GenMap }
   import java.security.MessageDigest
 
   type Table = GenMap[Hash, Pass]
@@ -20,7 +20,7 @@ package object tmto {
   /** Valid characters. */
   val ASCII = ('a', 'z')
   val Length = 3
-  val Algorithms = Seq("MD2", "MD5", "SHA-1", "SHA-1", "SHA-256", "SHA-384", "SHA-512")
+  val Algorithms = Seq("MD2", "MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512")
 
   case class Hash(hash: String) {
     /** 
