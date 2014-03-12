@@ -18,7 +18,7 @@ package object tmto {
   type Table = GenMap[Hash, Pass]
 
   /** Valid characters. */
-  val ASCII = (97.toChar, 122.toChar)
+  val ASCII = ('a', 'z')
   val Length = 3
 
   case class Hash(hash: String) {
@@ -69,7 +69,7 @@ package object tmto {
     * - Chosen start values are random.
     * - Chains are calculated in parallel.
     */
-  def table(width: Int, height: Int): Table = (Random.shuffle(passwords.take(height)).par map {
+  def table(width: Int, height: Int): Table = (Random.shuffle(passwords).take(height).par map {
     x => {
       val pass = Pass(x)
       chain(pass, md())(width - 1) -> pass
@@ -102,5 +102,5 @@ package object tmto {
   }
 
   /** Crack n random passwords. */
-  def test(n: Int, table: Table): GenSeq[Pass] = test(Random.shuffle(passwords.take(n)), table)
+  def test(n: Int, table: Table): GenSeq[Pass] = test(Random.shuffle(passwords).take(n), table)
 }
