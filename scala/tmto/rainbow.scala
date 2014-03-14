@@ -21,11 +21,16 @@ package object rainbow {
 
   case class TMTO(
     height: Int,
+    width: Int = 32,
     length: Int = 3,
     hasher: Hasher.Value = Hasher.MD2,
+    redHasher: Hasher.Value = Hasher.SHA1,
     chars: Seq[Char] = 'a' until 'z') {
 
     case class Hash(hash: String) {
+      /** Default digester. The damn thing is not thread safe! */
+      def rh(): MD = MD.getInstance(redHasher.toString)
+
       /** Reduce hash to a password.
         * Password length limited by digester pattern.
         * 
@@ -35,27 +40,26 @@ package object rainbow {
         * - Map integer to character index.
         * - Take 'length' groups and turn into String.
         */
-      def reduced(md: MD) = {
-        val hash2 = md.digest(hash.getBytes("UTF-8")).mkString
-        val groups = hash2 split '-' filter { _.nonEmpty }
-        val cs = groups map {
-          x => chars((BigInt(x) % chars.length).toInt)
+      def reduced(depth: Int) = {
+        val hasher = rh()
+        val digests = Stream.iterate(hash.getBytes("UTF-8")) { hasher.digest(_) }
+        val cs = digests(depth) map {
+          x => chars(Math.abs(x) % chars.length)
         }
 
         Pass(cs.take(length).mkString)
       }
-
-      /** Hash chain this Hash using `hs` digester as reducers. */
-      def chains(hs: List[MD]): List[Hash] = hs.scanLeft(this) { 
-        case (h, md) => h.reduced(md).hashed
-      }
-
-      /** Last hash using `hs` digester as reducers. */
-      def chained(hs: List[MD]): Hash = chains(hs).last
     }
 
     case class Pass(pass: String) {
       def hashed = Hash(digester().digest(pass.getBytes("UTF-8")).mkString)
+
+      def chain: Stream[(Pass, Hash)] = Stream.from(0).scanLeft (this, hashed) {
+        case ((_, h), d) => {
+          val pass = h.reduced(d)
+          (pass, pass.hashed)
+        }
+      }
     }
 
     /** Some (not all) password combinations. */
@@ -73,29 +77,23 @@ package object rainbow {
     val table: GenMap[Hash, Pass] = (Random.shuffle(passwords).take(height).par map {
       x => {
         val pass = Pass(x)
-        pass.hashed.chained(mds()) -> pass
+        pass.chain(width - 1)._2 -> pass
       }
     }).toMap
 
     /** Default digester. The damn thing is not thread safe! */
     def digester(): MD = MD.getInstance(hasher.toString)
 
-    /** Digesters. The damn thing is not thread safe! */
-    def mds() = Stream.continually(MD.getInstance("SHA-1")).take(6).toList
-
     def crack(hash: Hash): Option[Pass] = {
-      val chains = mds().tails.toList.reverse
-      val chain = mds()
-
       /** Search table row for Hash. */
-      @annotation.tailrec
-      def crackrow(pass: Pass, rs: List[MD]): Option[Pass] = pass.hashed match {
+/*      @annotation.tailrec
+      def crackrow(pass: Pass, depth: Int): Option[Pass] = pass.hashed match {
         case `hash` => Some(pass)
         case _ if (rs.isEmpty) => None
         case h => crackrow(h reduced rs.head, rs.tail)
-      }
+      }*/
 
-      @annotation.tailrec
+/*      @annotation.tailrec
       def crack(rss: List[List[MD]]): Option[Pass] = {
         val hlast = hash chained rss.head
         val entry = table get hlast
@@ -104,9 +102,10 @@ package object rainbow {
         if (start.isDefined) start
         else if (rss.tail.nonEmpty) crack(rss.tail)
         else None
-      }
+      }*/
 
-      crack(chains)
+      //crack(chains)
+      None
     }
   }
 
