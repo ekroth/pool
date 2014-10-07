@@ -1,10 +1,9 @@
 object collatz {
   import scala.collection.GenSeq
 
-  def all(n: Int): GenSeq[Long] = {
-    val xs = (1 to n).par
-    val combs = xs flatMap { seq(_) }
-    combs.distinct
+  def all(n: Long): GenSeq[Long] = {
+    val xs = (1L to n).par flatMap seq
+    xs.distinct
   }
 
   def seq(n: Long): Seq[Long] = {
