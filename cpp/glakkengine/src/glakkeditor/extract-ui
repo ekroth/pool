@@ -1,0 +1,38 @@
+#!/bin/bash
+WINDIR=""
+FORCE=0
+
+if [ "$1" = "-f" ]; then
+ FORCE=1
+ WINDIR=$2
+else
+ WINDIR=$1
+fi
+
+echo "Beginning extraction.."
+
+# Every file .ui file
+for file in $WINDIR/*.ui
+do
+ # Name without extension
+ name=${file%\.*}
+  
+ # Extract file   
+ if [[ ! $file -nt $name.hpp && -a $file ]]; then
+  # If original is older AND output file already exists..
+  if [ "$FORCE" = "1" ]; then
+   # Output is forced
+   uic-qt4 -o $name.hpp $file
+   echo "Extracted file $file to $name.hpp (forced)"
+  else
+   echo "$file is older then output file $name.hpp. Will not extract."
+  fi
+ else
+  uic-qt4 -o $name.hpp $file
+  echo "Extracted file $file to $name.hpp"
+ fi
+ 
+ 
+done
+
+echo "Done extracting"

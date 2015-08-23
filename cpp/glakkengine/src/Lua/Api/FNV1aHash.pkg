@@ -1,0 +1,10 @@
+$#include "Utilities/FNV1aHash.hpp"
+
+namespace kke
+{
+	namespace FNV1aHash
+	{
+		typedef unsigned long long FNV1aHash;
+		FNV1aHash hash_rt(const char* str);
+	}
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<Config>
+	<ShowFPS>true</ShowFPS>
+	<VSync>true</VSync>
+	<ActiveFPS>1</ActiveFPS>
+	<BackgroundFPS>1</BackgroundFPS>
+	<Width>800</Width>
+	<Height>600</Height>
+	<Threads>4</Threads>
+	<Cache>Cache</Cache>
+
+	<!-- <AudioDevice>ALSA Software on default</AudioDevice> -->
+	<AudioSources>32</AudioSources>
+</Config>

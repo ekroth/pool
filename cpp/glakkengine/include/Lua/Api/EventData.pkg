@@ -1,0 +1,20 @@
+$#include "Events/EventData.hpp"
+
+namespace kke
+{
+	typedef double EventTime;
+	typedef kke::FNV1aHash::FNV1aHash EventType;
+	
+	static kke::EventType EventHasherRT(const std::string& str);
+	static const char* const EventWildCharStr = (char*)"WildCharEvent";
+
+	class EventData
+	{
+	public:
+		EventData(const EventType& type, const EventTime& time);
+		virtual ~EventData();
+		
+		virtual const EventType& GetType() const;
+		virtual const EventTime& GetTime() const;
+	};
+}

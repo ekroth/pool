@@ -1,0 +1,12 @@
+$#include "Cake.hpp"
+
+namespace kke
+{
+	class Cake
+	{
+	public:
+		Cake(int bajs);
+		
+		int omega() const;
+	};
+}

@@ -1,0 +1,20 @@
+>> Varje skript ligger i en mapp
+
+Skript Foo
+
+Foo.lua
+Foo.binds
+
+Foo.binds säger namn på Events, och till vilken funktion dessa ska bindas till.
+
+Event Funktion
+"WindowResize" "ResizeFunc"
+
+>> Alternativt så har scripts en Load funktion (som endast kallas en gång), denna registerar sen funktioner (vettigare!)
+
+När man laddar skriptet (via klass) ska sen motorn hasha WindowResize, och spara funktionen.
+LuaScript klassen agerar som Listener, och får då via sin HandleEvent kalla rätt funktion (i en std::unordered_map<Hash, string funktion>).
+
+-- Kolla upp hur man 
+1. Hanterar skript som har samma namn på funktioner (typ Load, Unload)
+2. Laddar och unloadar funktioner vettigt. Flera VMs?

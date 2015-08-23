@@ -1,0 +1,42 @@
+$#include "Events/EventManager.hpp"
+
+namespace kke
+{	
+	class EventManager
+	{
+	public:
+		static EventManager& Instance();
+		static void Terminate();
+		
+	public:		
+		/**
+		 * @brief Add listener to type.
+		 **/
+		bool AddListener(kke::EventListener* listener, const kke::EventType& type);
+		
+		/**
+		 * @brief Remove listener.
+		 **/
+		bool DelListener(kke::EventListener* listener, const kke::EventType& type);
+		
+		/**
+		 * @brief Removes listener from all events.
+		 **/
+		bool DelListener(kke::EventListener* listener);
+		
+		/**
+		 * @brief Queue event to be processed next update. Event is now owned by EventManager.
+		 **/
+		bool QueueEvent(kke::EventData* event);
+		
+		/**
+		 * @brief Abort previously queued event. Event is now owned by EventManager.
+		 **/
+		bool AbortEvent(kke::EventData* event);
+		
+		/**
+		 * @brief Instantly process event. Won't be owned by EventManager.
+		 **/
+		bool Trigger(kke::EventData& event);
+	};
+}

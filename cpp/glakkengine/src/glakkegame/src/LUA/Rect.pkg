@@ -1,0 +1,55 @@
+$#include "Math/Rect.hpp"
+
+namespace kke
+{
+
+class Rect
+{
+	TOLUA_TEMPLATE_BIND(T,int,float)
+public:
+    Rect(T x = 0, T y = 0, T width = 0, T height = 0) :
+        X(x), Y(y), Width(width), Height(height)
+    { }
+
+    T Left() const
+    {
+        return X;
+    }
+    T Right() const
+    {
+        return X;
+    }
+    T Top() const
+    {
+        return Y;
+    }
+    T Bottom() const
+    {
+        return Y + Height;
+    }
+
+    Rect<T> operator=(const Rect<T> &value)
+    {
+        X = value.X;
+        Y = value.Y;
+        Width = value.Width;
+        Height = value.Height;
+
+        return *this;
+    }
+
+    bool operator==(const Rect<T>& value) const
+    {
+        return this->X == value.X && this->Y == value.Y && this->Width
+               == value.Width && this->Height == value.Height;
+    }
+
+    bool operator!=(const Rect<T>& value) const
+    {
+        return this->X != value.X || this->Y != value.Y || this->Width
+               != value.Width || this->Height != value.Height;
+    }
+
+    T X, Y, Width, Height;
+};
+}
