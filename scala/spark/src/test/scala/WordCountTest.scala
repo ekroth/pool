@@ -11,14 +11,15 @@ class WordCountTest extends PropSpec with
 
   /* Generator for non-empty String or newline to int */
   val wordMapGen: Gen[Map[String, Int]] =
-    Gen.mapOf(
-      Gen.zip(
-        Gen.oneOf(
-          Gen.const("\n"),
+    for {
+      map <- Gen.mapOf(
+        Gen.zip(
           Gen.alphaStr
             .suchThat(_.nonEmpty)
-            .map(_.toLowerCase)),
-        Gen.choose(1, 10)))
+            .map(_.toLowerCase),
+          Gen.choose(1, 10)))
+      ns <- Gen.zip("\n", Gen.choose(1, 10))
+    } yield map + ns
 
   /* Repeat each entry string by its value and flatten */
   def mapToList(map: Map[String, Int]): Seq[String] =
