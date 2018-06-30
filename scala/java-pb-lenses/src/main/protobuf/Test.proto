@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package contacts;
+
+option java_outer_classname = "JavaAPI";
+
+option java_package = "javaapi";
+
+message Person {
+    optional string name = 1;
+    optional int32 age = 2;
+    optional Address primary_address = 3;
+}
+
+message Address {
+    optional string country = 1;
+    optional string city = 2;
+    optional string zip = 3;
+    optional string street = 4;
+}
