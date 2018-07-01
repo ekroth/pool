@@ -1,4 +1,4 @@
-import javaapi.Test.{Address => SAddress}
+import javaapi.Test.{Address => SAddress, Person => SPerson}
 import javaapi.JavaAPI._
 
 import com.google.protobuf.AbstractMessage.Builder
@@ -113,8 +113,6 @@ object Test2 {
     override type ScalaPB = SAddress
     override type ScalaCompanion = SGeneratedMessageCompanion[ScalaPB]
 
-    implicit def messageCompanion: this.type = this
-
     override def parser: Parser[Address] = Address.parser()
 
     override def defaultInstance: Address = Address.getDefaultInstance
@@ -130,19 +128,47 @@ object Test2 {
     override def newBuilder(prototype: Address): Address.Builder = Address.newBuilder(prototype)
   }
 
+  implicit def addressCompanion: AddressCompanion.type = AddressCompanion
+
 
   // PERSON
 
   
-/*  implicit class PersonBuilderLens[UpperPB](_l: Lens[UpperPB, Person.Builder]) extends ObjectLens[UpperPB, Person.Builder](_l) {
+  implicit class PersonBuilderLens[UpperPB](_l: Lens[UpperPB, Person.Builder]) extends ObjectLens[UpperPB, Person.Builder](_l) {
     def primaryAddress = field(_.getPrimaryAddressBuilder)((c_, f_) => c_.setPrimaryAddress(f_))
     def age = field(_.getAge)((c_, f_) => c_.setAge(f_))
   }
   
-  implicit class PersonRich(underlying: Person) extends RichMessage[Person, Person.Builder](underlying)
-*/
+  implicit class PersonRich(underlying: Person) extends RichMessage[Person](underlying) {
+    override val companion: PersonCompanion.type = PersonCompanion
+    def update(ms: (BuilderOps.Updater[Person.Builder])*): Person =
+      BuilderOps.update[Person](underlying, companion)(ms).build()
+  }
 
-  import AddressCompanion.messageCompanion
+  object PersonCompanion extends GeneratedMessageCompanion[Person]
+    with BuilderSupport[Person, Person.Builder]
+  {
+    override type ScalaPB = SPerson
+    override type ScalaCompanion = SGeneratedMessageCompanion[ScalaPB]
+
+    override def parser: Parser[Person] = Person.parser()
+
+    override def defaultInstance: Person = Person.getDefaultInstance
+
+    override def descriptor: Descriptor = Person.getDescriptor
+
+    override def javaProtoSupport: JavaProtoSupport[SPerson, Person] = SPerson
+
+    override def scalaCompanion: ScalaCompanion = SPerson
+
+    override def newBuilder: Person.Builder = Person.newBuilder()
+
+    override def newBuilder(prototype: Person): Person.Builder = Person.newBuilder(prototype)
+  }
+
+  implicit def personCompanion: PersonCompanion.type = PersonCompanion
+
+
   import Utils._
 
   val x = Utils.default[Address].update(
@@ -155,10 +181,10 @@ object Test2 {
 
   val z: SAddress = scalaCompanion[Address].defaultInstance
 
- /* val y = Person.getDefaultInstance.update(
+  val wat = Person.getDefaultInstance.update(
     _.primaryAddress.country := "innerCountry",
     _.age := 1337
-  )*/
+  )
 
 
   def main(args: Array[String]): Unit = {
@@ -167,6 +193,7 @@ object Test2 {
     println(Utils.default[Address])
     println(Utils.scalaDefault[Address].copy(country = Some("ctuy")))
     println("wooop")
-    //println(y)
+    println(y)
+    println(wat.asScala)
   }
 }
