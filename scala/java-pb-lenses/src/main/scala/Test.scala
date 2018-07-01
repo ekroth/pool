@@ -100,15 +100,15 @@ object Lib {
 
   object ScalaConverters {
     implicit class MessageScalaConversions[M](val m: M) extends AnyVal {
-      def toScala(implicit companion: JavaProtoConverters[M]): companion.ScalaPB = companion.toScalaProto(m)
+      def toScalaProto(implicit companion: JavaProtoConverters[M]): companion.ScalaPB = companion.toScalaProto(m)
     }
 
     implicit class MessageOptionScalaConversions[M](val m: Option[M]) extends AnyVal {
-      def toScala(implicit companion: JavaProtoConverters[M]): Option[companion.ScalaPB] = m.map(companion.toScalaProto(_))
+      def toScalaProto(implicit companion: JavaProtoConverters[M]): Option[companion.ScalaPB] = m.map(companion.toScalaProto(_))
     }
 
     implicit class MessageSeqScalaConversions[M](val ms: Seq[M]) extends AnyVal {
-      def toScala(implicit converter: JavaProtoConverters[M]): Seq[converter.ScalaPB] = ms.map(converter.toScalaProto(_))
+      def toScalaProto(implicit converter: JavaProtoConverters[M]): Seq[converter.ScalaPB] = ms.map(converter.toScalaProto(_))
     }
   }
 
@@ -283,17 +283,20 @@ object Test2 {
     import scala.collection.JavaConverters._
 
     println(x)
-    println(x.toScala)
+    println(x.toScalaProto)
     println(x.street)
-    println(wat.gender.toScala)
+    x.update(
+      _.street := Seq.empty
+    )
+    println(wat.gender.toScalaProto)
     println(x.getStreetList.asScala)
     println(Utils.default[Address])
     println(Utils.scalaDefault[Address].copy(country = Some("ctuy")))
     println("wooop")
     println(enumValue[Gender]("Male"))
-    val genderScala: SGender = Gender.Male.toScala
-    val addressScala: SAddress = x.toScala
+    val genderScala: SGender = Gender.Male.toScalaProto
+    val addressScala: SAddress = x.toScalaProto
     println(y)
-    println(wat.toScala)
+    println(wat.toScalaProto)
   }
 }
