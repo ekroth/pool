@@ -14,43 +14,61 @@ object Lib {
   }
 
   abstract class RichMessage[M <: Message](underlying: M) {
-    def companion: GeneratedMessageCompanion[M] with BuilderSupport[M, _]
+    def companion: GeneratedMessageCompanion[M]
   }
 
-  abstract class RichMessageWithBuilder[M <: Message, B <: Message.Builder](underlying: M) extends RichMessage[M](underlying) {
-
-    def update(ms: (Lens[B, B] => Mutation[B])*): M =
-      ms.foldLeft[B](companion.newBuilder(underlying))((p, m) => m(Lens.unit[B])(p)).build().asInstanceOf[M]
-
-    def companion: GeneratedMessageCompanion[M] with BuilderSupport[M, B]
-  }
-
-  trait ScalaProtoSupport[JavaPB] {
-    type ScalaPB <: SGeneratedMessage with SMessage[ScalaPB]
-
-    def javaProtoSupport: JavaProtoSupport[ScalaPB, JavaPB]
-
-    def fromScalaProto(scalaProto: ScalaPB): JavaPB = javaProtoSupport.toJavaProto(scalaProto)
-
-    def toScalaProto(javaProto: JavaPB): ScalaPB = javaProtoSupport.fromJavaProto(javaProto)
+  abstract class RichMessageWithBuilder[M <: Message](underlying: M) extends RichMessage[M](underlying) {
+    def companion: GeneratedMessageCompanion[M]
   }
 
   abstract class GeneratedMessageCompanion[M <: Message] {
     type ScalaPB <: SGeneratedMessage with SMessage[ScalaPB]
+    type ScalaCompanion <: SGeneratedMessageCompanion[ScalaPB]
     def parser: Parser[M]
     def defaultInstance: M
     def descriptor: Descriptor
-    def scalaCompanion: SGeneratedMessageCompanion[ScalaPB]
+    def scalaCompanion: ScalaCompanion
+    def javaProtoSupport: JavaProtoSupport[ScalaPB, M]
+    def fromScalaProto(scalaProto: ScalaPB): M = javaProtoSupport.toJavaProto(scalaProto)
+    def toScalaProto(javaProto: M): ScalaPB = javaProtoSupport.fromJavaProto(javaProto)
   }
 
-  trait BuilderSupport[-M <: Message, +B <: Message.Builder] {
-    self: GeneratedMessageCompanion[_ <: Message] =>
+  trait BaseBuilderSupport[-M <: Message] {
+    type Builder <: Message.Builder
 
-    def newBuilder: B
-    def newBuilder(prototype: M): B
+    def newBuilder: Builder
+    def newBuilder(prototype: M): Builder
   }
 
-  implicit def RichMessage[M <: Message](underlying: M)(implicit support: ScalaProtoSupport[M]): support.ScalaPB = support.toScalaProto(underlying)
+  trait BuilderSupport[-M <: Message, B <: Message.Builder] extends BaseBuilderSupport[M] {
+    override type Builder = B
+  }
+
+  // In order for Scala to understand the type member we need to
+  // keep the [[support.Builder] in the method signature
+  // Sadly this means AnyVal can't be used
+  def messageToBuilderOps[M <: Message](message: M)(implicit support: BaseBuilderSupport[M]): BuilderOps[M, support.Builder] =
+    new BuilderOps[M, support.Builder](message, support)
+
+  // Some ugly but probably safe casts required..
+  class BuilderOps[M <: Message, B <: Message.Builder](val m: M, support: BaseBuilderSupport[M]) {
+    def updateGeneric(ms: (BuilderOps.Updater[B])*): M =
+      BuilderOps.update[M](m, support)(ms.asInstanceOf[Seq[Nothing]]).build().asInstanceOf[M]
+  }
+
+  object BuilderOps {
+    type Updater[B] = Lens[B, B] => Mutation[B]
+    def update[M <: Message](m: M, support: BaseBuilderSupport[M])
+                            (ms: Seq[Updater[support.Builder]]): support.Builder = {
+      val builder = support.newBuilder(m)
+      ms.foreach(_(Lens.unit[support.Builder])(builder))
+      builder
+    }
+  }
+
+  implicit class ScalaConversionOps[M <: Message](val m: M) extends AnyVal {
+    def asScala(implicit companion: GeneratedMessageCompanion[M]): companion.ScalaPB = companion.toScalaProto(m)
+  }
 }
 
 import Lib._
@@ -63,10 +81,11 @@ object Utils {
   //
   // def}
 
-  def scalaDefault[M <: Message : GeneratedMessageCompanion](implicit support: ScalaProtoSupport[M]): support.ScalaPB = {
-    val companion = implicitly[GeneratedMessageCompanion[M]]
-    support.toScalaProto(companion.defaultInstance)
+  def scalaDefault[M <: Message](implicit companion: GeneratedMessageCompanion[M]): companion.ScalaPB = {
+    companion.toScalaProto(companion.defaultInstance)
   }
+
+  def scalaCompanion[M <: Message](implicit companion: GeneratedMessageCompanion[M]): companion.ScalaCompanion = companion.scalaCompanion
 }
 
 
@@ -82,15 +101,17 @@ object Test2 {
     def country: Lens[UpperPB, String] = field(_.getCountry)((c_, f_) => c_.setCountry(f_))
   }
   
-  implicit class AddressRich(underlying: Address) extends RichMessageWithBuilder[Address, Address.Builder](underlying) {
-    override def companion: GeneratedMessageCompanion[Address] with BuilderSupport[Address, Address.Builder] = AddressCompanion
+  implicit class AddressRich(underlying: Address) extends RichMessageWithBuilder[Address](underlying) {
+    override val companion: AddressCompanion.type = AddressCompanion
+    def update(ms: (BuilderOps.Updater[Address.Builder])*): Address =
+      BuilderOps.update[Address](underlying, companion)(ms).build()
   }
 
   object AddressCompanion extends GeneratedMessageCompanion[Address]
     with BuilderSupport[Address, Address.Builder]
-    with ScalaProtoSupport[Address]
   {
     override type ScalaPB = SAddress
+    override type ScalaCompanion = SGeneratedMessageCompanion[ScalaPB]
 
     implicit def messageCompanion: this.type = this
 
@@ -102,7 +123,7 @@ object Test2 {
 
     override def javaProtoSupport: JavaProtoSupport[SAddress, Address] = SAddress
 
-    override def scalaCompanion: SGeneratedMessageCompanion[SAddress] = SAddress
+    override def scalaCompanion: ScalaCompanion = SAddress
 
     override def newBuilder: Address.Builder = Address.newBuilder()
 
@@ -122,10 +143,17 @@ object Test2 {
 */
 
   import AddressCompanion.messageCompanion
+  import Utils._
 
   val x = Utils.default[Address].update(
     _.country := "country"
   )
+
+  val y = messageToBuilderOps(x).updateGeneric(
+    _.country := "country"
+  )
+
+  val z: SAddress = scalaCompanion[Address].defaultInstance
 
  /* val y = Person.getDefaultInstance.update(
     _.primaryAddress.country := "innerCountry",
@@ -134,10 +162,10 @@ object Test2 {
 
 
   def main(args: Array[String]): Unit = {
-    import AddressCompanion.messageCompanion
-
+    println(x)
+    println(x.asScala)
     println(Utils.default[Address])
-    println(Utils.scalaDefault[Address])
+    println(Utils.scalaDefault[Address].copy(country = Some("ctuy")))
     println("wooop")
     //println(y)
   }
